@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
@@ -49,6 +50,13 @@ func main() {
 	ctx := context.Background()
 
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	var err error
+	if metadata.OnGCE() {
+		projectID, err = metadata.ProjectID()
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	initTracer(projectID)
 
