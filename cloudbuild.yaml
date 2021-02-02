@@ -20,4 +20,5 @@ steps:
       - --cpu=1
       - --memory=256M
       - --concurrency=8
+      - --allow-unauthenticated
       - --image=asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloudrun-opencensus/$BRANCH_NAME:$COMMIT_SHA
