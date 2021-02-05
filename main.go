@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
-	"io"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
@@ -48,6 +50,13 @@ func main() {
 	ctx := context.Background()
 
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	var err error
+	if metadata.OnGCE() {
+		projectID, err = metadata.ProjectID()
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	initTracer(projectID)
 
@@ -59,6 +68,13 @@ func main() {
 		panic(err)
 	}
 
+	hc := &http.Client{
+		Transport: &ochttp.Transport{
+			// Use Google Cloud propagation format.
+			Propagation: &propagation.HTTPFormat{},
+		},
+	}
+
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, err := als.Insert(ctx, &AccessLog{
@@ -67,8 +83,36 @@ func main() {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err.Error())
+			return
 		}
-		_, _ = io.WriteString(w, "Hello, world!\n")
+
+		var results []string
+		urls := []string{"https://cloudrun-helloworld-d5aduuftyq-an.a.run.app", "https://cloudrun-otel-d5aduuftyq-an.a.run.app/hello"}
+		for _, u := range urls {
+			req, _ := http.NewRequest("GET", u, nil)
+			req = req.WithContext(r.Context())
+
+			resp, err := hc.Do(req)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Println(err.Error())
+				return
+			}
+			defer resp.Body.Close()
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Println(err.Error())
+				return
+			}
+			results = append(results, string(b))
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(results); err != nil {
+			log.Println(err.Error())
+		}
 	})
 	http.Handle("/hello", handler)
 
