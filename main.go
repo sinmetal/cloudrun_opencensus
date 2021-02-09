@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -77,14 +78,17 @@ func main() {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		id := uuid.New().String()
 		_, err := als.Insert(ctx, &AccessLog{
-			ID: uuid.New().String(),
+			ID: id,
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err.Error())
 			return
 		}
+		fmt.Printf("AccessLogID : %s\n", id)
 
 		var results []string
 		urls := []string{"https://cloudrun-helloworld-d5aduuftyq-an.a.run.app", "https://cloudrun-otel-d5aduuftyq-an.a.run.app/hello"}
@@ -120,7 +124,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Listening on port %s", port)
+	fmt.Printf("Listening on port %s", port)
 
 	httpHandler := &ochttp.Handler{
 		// Use the Google Cloud propagation format.
