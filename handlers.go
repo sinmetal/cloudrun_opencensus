@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -39,6 +40,10 @@ func (h *Handlers) helloHandlerInternal(ctx context.Context, w http.ResponseWrit
 	msg := r.FormValue("message")
 	aelog.Infof(ctx, "AccessLogID : %s", id)
 	aelog.Infof(ctx, "Message : %s", msg)
+	if msg == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return fmt.Errorf("requreid message")
+	}
 	SetAttributesKV(ctx, map[string]interface{}{
 		"AccessLogID": id,
 		"Message":     msg,
@@ -60,7 +65,7 @@ func (h *Handlers) helloHandlerInternal(ctx context.Context, w http.ResponseWrit
 		resp, err := hc.Do(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err.Error())
+			aelog.Errorf(ctx, "failed request %s", err)
 			return err
 		}
 		defer func() {
@@ -71,7 +76,7 @@ func (h *Handlers) helloHandlerInternal(ctx context.Context, w http.ResponseWrit
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err.Error())
+			aelog.Errorf(ctx, "failed read body %s", err)
 			return err
 		}
 		results = append(results, string(b))
