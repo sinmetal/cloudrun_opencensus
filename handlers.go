@@ -61,7 +61,7 @@ func (h *Handlers) helloHandlerInternal(ctx context.Context, w http.ResponseWrit
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err.Error())
-			return
+			return err
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
@@ -72,7 +72,7 @@ func (h *Handlers) helloHandlerInternal(ctx context.Context, w http.ResponseWrit
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err.Error())
-			return
+			return err
 		}
 		results = append(results, string(b))
 	}
