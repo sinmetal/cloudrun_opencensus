@@ -19,7 +19,8 @@ type Handlers struct {
 }
 
 func (h *Handlers) HelloHandler(w http.ResponseWriter, r *http.Request) {
-	if err := h.helloHandlerInternal(r.Context(), w, r); err != nil {
+	ctx := aelog.WithHTTPRequest(r.Context(), r)
+	if err := h.helloHandlerInternal(ctx, w, r); err != nil {
 		// noop
 	}
 }
