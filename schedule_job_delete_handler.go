@@ -43,7 +43,7 @@ func (h *Handlers) scheduleJobDeleteHandlerInternal(ctx context.Context, w http.
 		fmt.Printf("Schedule Job Get %s", err)
 	}
 
-	time.Sleep(5 * time.Minute) // すやすや
+	time.Sleep(30 * time.Second) // すやすや
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
