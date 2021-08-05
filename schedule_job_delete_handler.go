@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/vvakame/sdlog/aelog"
 	schedulerpb "google.golang.org/genproto/googleapis/cloud/scheduler/v1"
@@ -29,6 +30,7 @@ func (h *Handlers) scheduleJobDeleteHandlerInternal(ctx context.Context, w http.
 		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
+	time.Sleep(5 * time.Minute) // すやすや
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
