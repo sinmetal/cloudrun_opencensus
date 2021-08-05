@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
+	scheduler "cloud.google.com/go/scheduler/apiv1"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"go.opencensus.io/plugin/ochttp"
@@ -66,11 +67,18 @@ func main() {
 		panic(err)
 	}
 
+	schedulerClient, err := scheduler.NewCloudSchedulerClient(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	handlers := &Handlers{
-		als: als,
+		als:       als,
+		scheduler: schedulerClient,
 	}
 
 	http.HandleFunc("/hello", handlers.HelloHandler)
+	http.HandleFunc("/deleteSchedulerJob", handlers.ScheduleJobDeleteHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
