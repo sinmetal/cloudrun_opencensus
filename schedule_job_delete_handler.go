@@ -25,7 +25,7 @@ func (h *Handlers) scheduleJobDeleteHandlerInternal(ctx context.Context, w http.
 	if err := h.scheduler.DeleteJob(ctx, &schedulerpb.DeleteJobRequest{
 		Name: fmt.Sprintf(jobName),
 	}); err != nil {
-		fmt.Printf("failed Scheduler Job Delete:%s : %w", jobName, err)
+		fmt.Printf("failed Scheduler Job Delete:%s : %s\n", jobName, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
