@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	scheduler "cloud.google.com/go/scheduler/apiv1"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"encoding/json"
 	"github.com/google/uuid"
@@ -15,7 +16,8 @@ import (
 )
 
 type Handlers struct {
-	als *AccessLogStore
+	als       *AccessLogStore
+	scheduler *scheduler.CloudSchedulerClient
 }
 
 func (h *Handlers) HelloHandler(w http.ResponseWriter, r *http.Request) {
