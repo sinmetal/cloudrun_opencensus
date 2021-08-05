@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -13,7 +11,6 @@ import (
 	"cloud.google.com/go/datastore"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
-	"github.com/google/uuid"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
 )
@@ -69,56 +66,11 @@ func main() {
 		panic(err)
 	}
 
-	hc := &http.Client{
-		Transport: &ochttp.Transport{
-			// Use Google Cloud propagation format.
-			Propagation: &propagation.HTTPFormat{},
-		},
+	handlers := &Handlers{
+		als: als,
 	}
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		id := uuid.New().String()
-		_, err := als.Insert(ctx, &AccessLog{
-			ID: id,
-		})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err.Error())
-			return
-		}
-		fmt.Printf("AccessLogID : %s\n", id)
-
-		var results []string
-		urls := []string{"https://cloudrun-helloworld-d5aduuftyq-an.a.run.app", "https://cloudrun-otel-d5aduuftyq-an.a.run.app/hello"}
-		for _, u := range urls {
-			req, _ := http.NewRequest("GET", u, nil)
-			req = req.WithContext(r.Context())
-
-			resp, err := hc.Do(req)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Println(err.Error())
-				return
-			}
-			defer resp.Body.Close()
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Println(err.Error())
-				return
-			}
-			results = append(results, string(b))
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(results); err != nil {
-			log.Println(err.Error())
-		}
-	})
-	http.Handle("/hello", handler)
+	http.HandleFunc("/hello", handlers.HelloHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
